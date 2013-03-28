@@ -4,12 +4,6 @@ Font Settings for open sans
     an 800 exists but I wouldn't want to use it.
     
 */
-/*
-Font Settings for open sans
-    Open Sans weights (300, 400, 600, 700)
-    an 800 exists but I wouldn't want to use it.
-    
-*/
 html {
   margin: 0;
   padding: 0;
@@ -28,6 +22,11 @@ body {
   z-index: -2;
 }
 .hoverlines line {
+  stroke: #ff6600;
+  stroke-width: 3px;
+  opacity: 0.5;
+}
+.select line {
   stroke: #ff6600;
   stroke-width: 3px;
   opacity: 0.5;
