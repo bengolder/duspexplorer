@@ -31,7 +31,6 @@ function getCenters(neighbors){
     return centers;
 }
 
-
 function drawLines (target, g, neighborclass) {
     var thisCenter = getCenter($(target));
     var neighbors = getNeighborNodes(target);
@@ -57,6 +56,27 @@ function removeLines (target, g, neighborclass) {
     $(neighbors).removeClass(neighborclass);
     g.selectAll("line")
         .data([]).exit().remove();
+}
+
+function select(target){
+
+}
+
+function deselect(target){
+
+}
+
+function expand(target){
+
+}
+
+function collapse(target){
+
+}
+
+function resizeSVG(){
+    svg.attr("width", getDocumentSize()[0])
+    .attr("height", getDocumentSize()[1]);
 }
 
 var svg = d3.select("#geom_background").append("svg")
@@ -99,6 +119,7 @@ $('body').on('mouseover','.node', function(e){
 
 });
 
+$(window).resize(resizeSVG());
 
 
 
