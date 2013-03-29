@@ -4,6 +4,7 @@
 @gut: 12px;
 @col: 360px;
 @pad: 12px;
+@semivu: 18px;
 
 // colors
 @color: #ff6600;
@@ -33,6 +34,10 @@ body {
   line-height: @vu;
   font-weight: 400;
   color: @text;
+}
+
+.expansion-switch {
+  display: none;
 }
 
 #geom_background {
@@ -80,8 +85,16 @@ body {
     overflow: hidden;
   }
   .node-details {
+    background-color: @text;
+    color: @back;
+    border-top: 2px @back solid;
+    .xpad;
     display: none;
   }
+}
+
+.chevron_single polygon {
+  fill: @text;
 }
 
 .node.smalltopic {
@@ -118,8 +131,34 @@ body {
 /*}*/
 
 .hovered {
-  color: @back;
+  .node-title {
+    color: @back;
+    background-color: @text;
+  }
+}
+.expansion-switch {
+  .clear;
+  border-top: 2px @back solid;
   background-color: @text;
+  text-align: center;
+  height: @semivu;
+  position: relative;
+  svg {
+    position: absolute;
+    top: (@semivu / 2) - 5;
+    margin-left: -@vu * 0.5;
+    g {
+      polygon {
+        fill: @back;
+      }
+    }
+  }
+  &:hover {
+    background-color: @color;
+    polygon {
+      fill: @text;
+    }
+  }
 }
 .selected {
   .hovered;

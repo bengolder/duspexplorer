@@ -17,6 +17,9 @@ body {
   font-weight: 400;
   color: #222222;
 }
+.expansion-switch {
+  display: none;
+}
 #geom_background {
   position: absolute;
   z-index: -1;
@@ -58,7 +61,15 @@ body {
   overflow: hidden;
 }
 .node .node-details {
+  background-color: #222222;
+  color: #ffffff;
+  border-top: 2px #ffffff solid;
+  padding-left: 12px;
+  padding-right: 12px;
   display: none;
+}
+.chevron_single polygon {
+  fill: #222222;
 }
 .node.smalltopic .node-title {
   font-family: "Helvetica Neue", "Helvetica", "Droid Sans", "Arial", sans-serif;
@@ -80,11 +91,34 @@ body {
 /*.highlighted, .highlight-stay {*/
 /*background-color: @color;*/
 /*}*/
-.hovered {
+.hovered .node-title {
   color: #ffffff;
   background-color: #222222;
 }
-.selected {
+.expansion-switch {
+  margin: 0;
+  padding: 0;
+  border-top: 2px #ffffff solid;
+  background-color: #222222;
+  text-align: center;
+  height: 18px;
+  position: relative;
+}
+.expansion-switch svg {
+  position: absolute;
+  top: 4px;
+  margin-left: -12px;
+}
+.expansion-switch svg g polygon {
+  fill: #ffffff;
+}
+.expansion-switch:hover {
+  background-color: #ff6600;
+}
+.expansion-switch:hover polygon {
+  fill: #222222;
+}
+.selected .node-title {
   color: #ffffff;
   background-color: #222222;
 }

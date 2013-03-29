@@ -18,8 +18,9 @@ function getCenterAndBox(obj){
     var offset = obj.offset();
     var left = offset.left;
     var top = offset.top;
-    var x = left + (w / 2);
-    var y = top + (h / 2);
+    var span = obj.find('.node-title span');
+    var x = span.offset().left + (span.width() / 2);
+    var y = span.offset().top + (span.height() / 2);
 
     return {'x':x, 'y':y, 'w':w, 'h':h,
             'left':left, 'top':top};
@@ -80,9 +81,24 @@ function removeLines (target, g, neighborclass) {
         .data([]).exit().remove();
 }
 
+function addExpansionTrigger(target){
+    var div = $('#switch-template').clone();
+    div.attr('id', '');
+    div.find('g').attr('transform', 'rotate(180, 12, 5)');
+    target.append(div);
+    div.addClass('expand-trigger').show();
+}
+
+function removeExpansionTrigger(target){
+    target.find('.expand-trigger').remove();
+}
+
+
 
 function makeHovered(target){
     target.addClass('hovered');
+    // it gets messy to add the expansion trigger here
+    // addExpansionTrigger(target);
     drawLinkGeometry(target[0], hoverLayer, 'highlighted');
 }
 
@@ -93,30 +109,66 @@ function makeUnhovered(target){
 
 function makeSelected(target){
     target.addClass('selected');
-    var numNeighbors = $.data(target[0], 'neighbors').length;
-    console.log( numNeighbors );
     // make an svg layer for its links
     var svgLayer = svg.insert("g", ":first-child").attr("class", 
         "select " + target[0].id);
     // draw the geometry
     drawLinkGeometry(target[0], svgLayer, 'highlight-stay');
+    var expandTrigger = target.find('.expand-trigger');
+    if (expandTrigger.length < 1){
+        addExpansionTrigger(target);
+    }
 }
 
 function deselect(target){
-
+    if (target.hasClass('expanded')){
+        collapse(target);
+    }
     target.removeClass('selected');
+    removeExpansionTrigger(target);
     // remove the svg layer
     $('.'+target[0].id).remove();
     var neighbors = getNeighborNodes(target[0]);
     $(neighbors).removeClass('highlight-stay');
 }
 
-function expand(target){
+function expand(target) {
+    // the target is the expand trigger!
+    var node = target.parent();
+    node.css('z-index', '9');
+    node.animate(
+        {'width': '384px'},
+        100,
+        function(){
+            var details = node.find('.node-details');
+            details.slideDown(100);
+            node.addClass('expanded');
+            target.removeClass('expand-trigger');
+            target.addClass('collapse-trigger');
+            target.find('g').attr('transform', '');
+        });
 
 }
 
 function collapse(target){
-
+    // the target is the expand trigger!
+    var node = target.parent();
+    node.removeClass('expanded');
+    var originalWidth = $.data(node[0], 'position').w;
+    var details = node.find('.node-details');
+    details.slideUp(100, function(){
+        target.find('g').attr('transform', 'rotate(180, 12, 5)');
+        node.animate(
+                {'width': originalWidth + 1},
+                100);
+        node.css('width', 'auto');
+        if (!node.hasClass('selected')) {
+            removeExpansionTrigger(node);
+        }
+        target.removeClass('collapse-trigger');
+        target.addClass('expand-trigger');
+        node.css('z-index', 'auto');
+    });
 }
 
 function alignNeighbors(target){
@@ -132,12 +184,32 @@ function resizeSVG(){
     .attr("height", getDocumentSize()[1]);
 }
 
+function fixNodes(){
+    var positions = [];
+    // get all the positions
+    $('.node').each(function(i, elem){
+        $.data(elem, 'position', 
+         getCenterAndBox($(elem)) );
+    });
+    // set all the positions
+    $('.node').each(function(i, elem){
+        var p = $.data(elem, 'position');
+        $(elem).css('top', p.top);
+        $(elem).css('left', p.left);
+    });
+    $('.node').css('position', 'absolute')
+        .css('float', 'none');
+}
+
 function assignNeighborData(i, elem){
     var neighbors = $(getNeighborNodes(elem));
     $.data(elem, 'neighbors', neighbors);
 }
 
 $('.node').each(assignNeighborData);
+$('.node-details').hide();
+
+fixNodes();
 
 var svg = d3.select("#geom_background").append("svg")
     .attr("width", getDocumentSize()[0])
@@ -149,19 +221,19 @@ var lines = svg.selectAll("line");
 
 
 // listeners
-$('body').on('mouseover','.node', function(e){
+$('body').on('mouseenter','.node', function(e){
 
     var target = $(this);
     makeHovered(target);
 
-}).on('mouseout', '.node', function(e){
+}).on('mouseleave', '.node', function(e){
 
     var target = $(this);
     makeUnhovered(target);
 
-}).on('click', '.node', function(e){
+}).on('click', '.node-title', function(e){
 
-    var target = $(this);
+    var target = $(this).parent();
 
     if (target.hasClass('selected')) {
         deselect(target);
@@ -176,11 +248,15 @@ $('body').on('mouseover','.node', function(e){
 
 }).on('click', '.expand-trigger', function(e){
 
+    // don't let it bubble up to the node
+    e.stopPropagation();
     var target = $(this);
     expand(target);
 
 }).on('click', '.collapse-trigger', function(e){
 
+    // don't let it bubble up to the node
+    e.stopPropagation();
     var target = $(this);
     collapse(target);
 
