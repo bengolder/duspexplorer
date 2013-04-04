@@ -297,6 +297,7 @@ $('body').on('mouseenter','.node', function(e){
         top = top + h + offset;
         console.log(top);
     });
+    resizeSVG();
 });
 
 $(window).resize(resizeSVG());
