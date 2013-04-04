@@ -13,14 +13,17 @@ function getDocumentSize(){
 }
 
 function getCenterAndBox(obj){
+    var x, y;
     var w = obj.width();
     var h = obj.height();
     var offset = obj.offset();
     var left = offset.left;
     var top = offset.top;
     var span = obj.find('.node-title span');
-    var x = span.offset().left + (span.width() / 2);
-    var y = span.offset().top + (span.height() / 2);
+    if (span.length > 0){
+        x = span.offset().left + (span.width() / 2);
+        y = span.offset().top + (span.height() / 2);
+    }
 
     return {'x':x, 'y':y, 'w':w, 'h':h,
             'left':left, 'top':top};
@@ -40,6 +43,7 @@ function drawLinkGeometry (target, g, neighborclass) {
     
     // get all the geometry info
     var thisCenter = getCenterAndBox($(target));
+    console.log(thisCenter);
     var neighbors = $.data(target, 'neighbors');
     neighbors.addClass(neighborclass);
     var geoms = getCentersAndBoxes(neighbors);
@@ -145,6 +149,7 @@ function expand(target) {
             node.addClass('expanded');
             target.removeClass('expand-trigger');
             target.addClass('collapse-trigger');
+            node.find('.node-title').addClass('collapse-trigger');
             target.find('g').attr('transform', '');
         });
 
@@ -153,20 +158,22 @@ function expand(target) {
 function collapse(target){
     // the target is the expand trigger!
     var node = target.parent();
+    var trigger = node.find('.expansion-switch');
     node.removeClass('expanded');
     var originalWidth = $.data(node[0], 'position').w;
     var details = node.find('.node-details');
     details.slideUp(100, function(){
-        target.find('g').attr('transform', 'rotate(180, 12, 5)');
+        trigger.find('g').attr('transform', 'rotate(180, 12, 5)');
         node.animate(
-                {'width': originalWidth + 1},
+                {'width': originalWidth + 2},
                 100);
         node.css('width', 'auto');
         if (!node.hasClass('selected')) {
             removeExpansionTrigger(node);
         }
-        target.removeClass('collapse-trigger');
-        target.addClass('expand-trigger');
+        trigger.removeClass('collapse-trigger');
+        node.find('.node-title').removeClass('collapse-trigger');
+        trigger.addClass('expand-trigger');
         node.css('z-index', 'auto');
     });
 }
@@ -189,11 +196,13 @@ function fixNodes(){
     // get all the positions
     $('.node').each(function(i, elem){
         $.data(elem, 'position', 
-         getCenterAndBox($(elem)) );
+            function (){
+         return getCenterAndBox($(elem));
+            });
     });
     // set all the positions
     $('.node').each(function(i, elem){
-        var p = $.data(elem, 'position');
+        var p = $.data(elem, 'position')();
         $(elem).css('top', p.top);
         $(elem).css('left', p.left);
     });
@@ -260,6 +269,34 @@ $('body').on('mouseenter','.node', function(e){
     var target = $(this);
     collapse(target);
 
+}).on('click', '.category', function(e){
+    // get all the things of that category
+    var target = $(this);
+    var string = target.attr("string");
+    console.log(string);
+    var friends = $('div[class*="'+string+'"]');
+    console.log(friends);
+    var heights = [];
+    var thisBox = getCenterAndBox(target);
+    var offset = 24;
+    var top = thisBox.top + thisBox.h + offset;
+    var left = thisBox.left;
+    // get all their heights
+    friends.each(function(i, elem){
+        obj = $(elem);
+        // calculate their new positions
+        var geom = getCenterAndBox(obj);
+        console.log(geom);
+        var h = geom['h'];
+        console.log('height',h);
+        // animate them from their starting position to new position
+        obj.animate({
+            'top':top,
+            'left':left,
+        }, 1000);
+        top = top + h + offset;
+        console.log(top);
+    });
 });
 
 $(window).resize(resizeSVG());

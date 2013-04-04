@@ -43,6 +43,21 @@ body {
   fill: #ff6600;
   opacity: 0.6;
 }
+.header {
+  position: relative;
+  margin-left: 12px;
+}
+.header .category {
+  margin-top: 48px;
+  width: 30%;
+  font-family: "Helvetica Neue", "Helvetica", "Droid Sans", "Arial", sans-serif;
+  font-weight: 700;
+  float: left;
+  margin-left: 12px;
+  padding-left: 12px;
+  padding-right: 12px;
+  cursor: pointer;
+}
 .node {
   /*background-color: #ddd;*/
 
