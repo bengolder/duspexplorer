@@ -255,11 +255,83 @@ function assignColors(){
     });
 }
 
+//+ Jonas Raoni Soares Silva
+//@ http://jsfromhell.com/array/shuffle [v1.0]
+function shuffle(o){ //v1.0
+    for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+    return o;
+};
+
+function stackRandomly(){
+    $('.categories').slideUp(function(){
+        var nodes = $('.node');
+        nodes = shuffle(nodes);
+        var offset = 24;
+        var eachHeight = 48;
+        var top = offset + eachHeight;
+        var left = offset * 2;
+        var maxwidth = $(document).width();
+        nodes.each(function(i, elem){
+            var obj = $(elem);
+            var vect;
+            var geom = getCenterAndBox(obj);
+            var newLeft = left + offset + geom.w;
+            if (newLeft > maxwidth){
+                // it wont fit
+                // go to the next line
+                left = offset + geom.w + offset;
+                top = top + eachHeight + offset;
+                vect = {
+                    'top':top,
+                    'left':offset * 2,
+                };
+            } else {
+                vect = {
+                    'top':top,
+                    'left':left,
+                };
+                left = left + offset + geom.w;
+            }
+            obj.animate(vect, 1000);
+        });
+    });
+}
+
+function stackOrderly(){
+    $('.categories').slideDown(function(){
+
+        $('.category').each(function(i, elem){
+            var target = $(elem);
+            var string = target.attr("string");
+            var friends = $('div[class*="'+string+'"]');
+            var thisBox = getCenterAndBox(target);
+            var offset = 24;
+            var top = thisBox.top + offset;
+            var left = thisBox.left - 12;
+            // get all their heights
+            friends.each(function(i, elem){
+                var obj = $(elem);
+                // calculate their new positions
+                var geom = getCenterAndBox(obj);
+                var h = geom['h'];
+                // animate them from their starting position to new position
+                obj.animate({
+                    'top':top,
+                    'left':left,
+                }, 1000);
+                top = top + h + offset;
+            });
+
+        });
+
+        resizeSVG();
+    });
+}
+
 $('.node').each(assignNeighborData);
 $('.node-details').hide();
 
 assignColors();
-fixNodes();
 
 var svg = d3.select("#geom_background").append("svg")
     .attr("width", getDocumentSize()[0])
@@ -269,6 +341,9 @@ var hoverLayer = svg.append("g").attr("class", "hoverLayer");
 
 var lines = svg.selectAll("line");
 
+fixNodes();
+stackOrderly();
+setTimeout(stackRandomly, 1300);
 
 // listeners
 $('body').on('mouseenter','.node', function(e){
@@ -310,30 +385,10 @@ $('body').on('mouseenter','.node', function(e){
     var target = $(this);
     collapse(target);
 
-}).on('click', '.category', function(e){
-    // get all the things of that category
-    var target = $(this);
-    var string = target.attr("string");
-    var friends = $('div[class*="'+string+'"]');
-    var heights = [];
-    var thisBox = getCenterAndBox(target);
-    var offset = 24;
-    var top = thisBox.top + thisBox.h + offset;
-    var left = thisBox.left;
-    // get all their heights
-    friends.each(function(i, elem){
-        obj = $(elem);
-        // calculate their new positions
-        var geom = getCenterAndBox(obj);
-        var h = geom['h'];
-        // animate them from their starting position to new position
-        obj.animate({
-            'top':top,
-            'left':left,
-        }, 1000);
-        top = top + h + offset;
-    });
-    resizeSVG();
+}).on('click', '.randomize', function(e){
+    stackRandomly();
+}).on('click', '.organize', function(e){
+    stackOrderly();
 });
 
 $(window).resize(resizeSVG());

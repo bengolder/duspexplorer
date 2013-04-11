@@ -74,26 +74,45 @@ body {
   }
 }
 
+.controls {
+  height: 61px;
+}
+
 .header {
   position: relative;
-  margin-left: @pad;
-  .category {
-      margin-top: @vu * 2;
-      width: 30%;
-      font-family: @sans;
-      font-weight: 700;
+  margin-left: @pad * 2 + @gut * 2;
+  .controls {
+    padding-left: @pad;
+    div {
+      margin-top: @vu;
+      margin-right: @col / 2;
       float: left;
-      margin-left: @gut;
       padding-left: @pad;
       padding-right: @pad;
+      padding-top: @vu / 4;
       cursor: pointer;
+      &:hover {
+        background-color: #ccc;
+      }
+    }
+  } 
+  .categories {
+    margin-top: @vu * 2;
+    margin-left: @gut;
+    .category {
+        width: 30%;
+        font-family: @sans;
+        font-weight: 700;
+        float: left;
+        padding-left: @pad;
+        padding-right: @pad;
+    }
   }
 }
 
 .node {
   /*background-color: #ddd;*/
   /*color: @back;*/
-  float: left;
   margin-left: @gut;
   margin-top: @vu;
   max-width: @col + (@pad * 2);
