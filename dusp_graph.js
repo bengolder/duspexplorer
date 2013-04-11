@@ -40,10 +40,9 @@ function getCentersAndBoxes(neighbors){
 }
 
 function drawLinkGeometry (target, g, neighborclass) {
-    
+    var color = $.data(target, 'color')||'#aaa';
     // get all the geometry info
     var thisCenter = getCenterAndBox($(target));
-    console.log(thisCenter);
     var neighbors = $.data(target, 'neighbors');
     neighbors.addClass(neighborclass);
     var geoms = getCentersAndBoxes(neighbors);
@@ -59,21 +58,21 @@ function drawLinkGeometry (target, g, neighborclass) {
     boxes.attr('y', function(d){return d.top});
     boxes.attr('width', function(d){return d.w});
     boxes.attr('height', function(d){return d.h});
+    boxes.style('fill', color);
 
     // draw the lines
     lines.attr('x1', thisCenter.x)
         .attr('y1', thisCenter.y)
         .attr('x2', function(d){ return d.x })
-        .attr('y2', function(d){ return d.y });
+        .attr('y2', function(d){ return d.y })
+        .attr('stroke-dasharray', '6, 4');
+    lines.style('stroke', color);
 
     // why must I dig to get the class name???
     var gclass = g[0][0].className.baseVal;
 
     // I only need this here because decaring it in css
     // didn't work
-    //if (gclass == "hoverLayer"){
-        //lines.attr('stroke-dasharray', '8, 4');
-    //}
 }
 
 function removeLines (target, g, neighborclass) {
@@ -85,12 +84,13 @@ function removeLines (target, g, neighborclass) {
         .data([]).exit().remove();
 }
 
-function addExpansionTrigger(target){
+function addExpansionTrigger(target, color){
     var div = $('#switch-template').clone();
     div.attr('id', '');
     div.find('g').attr('transform', 'rotate(180, 12, 5)');
     target.append(div);
     div.addClass('expand-trigger').show();
+    div.css('background-color', color);
 }
 
 function removeExpansionTrigger(target){
@@ -101,6 +101,8 @@ function removeExpansionTrigger(target){
 
 function makeHovered(target){
     target.addClass('hovered');
+    var color = $.data(target[0], 'color');
+    target.css('background-color', color);
     // it gets messy to add the expansion trigger here
     // addExpansionTrigger(target);
     drawLinkGeometry(target[0], hoverLayer, 'highlighted');
@@ -109,10 +111,15 @@ function makeHovered(target){
 function makeUnhovered(target){
     removeLines(target[0], hoverLayer, 'highlighted');
     target.removeClass('hovered');
+    if (!target.hasClass('selected')){
+        target.css('background-color', '');
+    };
 }
 
 function makeSelected(target){
     target.addClass('selected');
+    var color = $.data(target[0], 'color');
+    target.css('background-color', color);
     // make an svg layer for its links
     var svgLayer = svg.insert("g", ":first-child").attr("class", 
         "select " + target[0].id);
@@ -120,7 +127,7 @@ function makeSelected(target){
     drawLinkGeometry(target[0], svgLayer, 'highlight-stay');
     var expandTrigger = target.find('.expand-trigger');
     if (expandTrigger.length < 1){
-        addExpansionTrigger(target);
+        addExpansionTrigger(target, color);
     }
 }
 
@@ -129,6 +136,7 @@ function deselect(target){
         collapse(target);
     }
     target.removeClass('selected');
+    target.css('background-color', '');
     removeExpansionTrigger(target);
     // remove the svg layer
     $('.'+target[0].id).remove();
@@ -215,9 +223,42 @@ function assignNeighborData(i, elem){
     $.data(elem, 'neighbors', neighbors);
 }
 
+function log(thing){
+    console.log(thing);
+}
+
+function assignColors(){
+    var people0 = d3.hcl("#F87446");
+    var people1 = d3.hcl("#2FF383");
+    var topic0 = d3.hcl("#4E8FFD");
+    var topic1 = d3.hcl("#B73384");
+    var people = d3.scale.linear()
+        .range([people0, people1])
+        .interpolate(d3.interpolateHcl);
+    var topic = d3.scale.linear()
+        .range([topic0, topic1])
+        .interpolate(d3.interpolateHcl);
+    var peoples = $('.person');
+    var numPeoples = peoples.length;
+    peoples.each(function (i, elem) {
+        var color = people(i/numPeoples);
+        $.data(elem, 'color', color);
+    });
+    var topics = $('div[class*=topic]');
+    var numTopics = topics.length;
+    topics.each(function (i, elem) {
+        var color = topic(i/numTopics);
+        $.data(elem, 'color', color);
+    });
+    $('.project').each(function(i, elem){
+        $.data(elem, 'color', "#aaa");
+    });
+}
+
 $('.node').each(assignNeighborData);
 $('.node-details').hide();
 
+assignColors();
 fixNodes();
 
 var svg = d3.select("#geom_background").append("svg")
@@ -273,9 +314,7 @@ $('body').on('mouseenter','.node', function(e){
     // get all the things of that category
     var target = $(this);
     var string = target.attr("string");
-    console.log(string);
     var friends = $('div[class*="'+string+'"]');
-    console.log(friends);
     var heights = [];
     var thisBox = getCenterAndBox(target);
     var offset = 24;
@@ -286,16 +325,13 @@ $('body').on('mouseenter','.node', function(e){
         obj = $(elem);
         // calculate their new positions
         var geom = getCenterAndBox(obj);
-        console.log(geom);
         var h = geom['h'];
-        console.log('height',h);
         // animate them from their starting position to new position
         obj.animate({
             'top':top,
             'left':left,
         }, 1000);
         top = top + h + offset;
-        console.log(top);
     });
     resizeSVG();
 });

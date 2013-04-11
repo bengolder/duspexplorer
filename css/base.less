@@ -11,6 +11,10 @@
 @text: #222;
 @back: #fff;
 
+@person: #222;
+@project: #00BD06;
+@topic: #000;
+
 /*
 Font Settings for open sans
     Open Sans weights (300, 400, 600, 700)
@@ -45,28 +49,28 @@ body {
   z-index: -1;
 }
 
+.seeThrough(){
+  opacity: 0.6;
+}
 .hoverLayer{ 
   line {
-    stroke: @text;
-    stroke-width: 3px;
-    opacity: 0.5;
+    stroke-width: 2px;
+    .seeThrough;
   }
   rect {
-    stroke: @text;
     stroke-width: 2px;
     fill: none;
+    .seeThrough;
   }
 }
 
 .select {
   line {
-    stroke: @color;
-    stroke-width: 3px;
-    opacity: 0.6;
+    stroke-width: 2px;
+    .seeThrough;
   }
   rect {
-    fill: @color;
-    opacity: 0.6;
+    .seeThrough;
   }
 }
 
@@ -101,8 +105,8 @@ body {
     overflow: hidden;
   }
   .node-details {
-    background-color: @text;
-    color: @back;
+    //background-color: @text;
+    //color: @back;
     border-top: 2px @back solid;
     .xpad;
     display: none;
@@ -119,6 +123,7 @@ body {
     font-size: 1.2em;
     font-variant: small-caps;
     font-weight: 700;
+    color: @topic;
   }
 }
 
@@ -126,6 +131,7 @@ body {
   .node-title {
     font-family: @sans;
     font-weight: 600;
+    color: @topic;
   }
 }
 
@@ -133,29 +139,38 @@ body {
   .node-title {
     font-style: italic;
     font-weight: 300;
+    color: #ccc;
   }
 }
 
 .node.person {
   .node-title {
     font-weight: 400;
+    color: @person;
   }
 }
 
-/*.highlighted, .highlight-stay {*/
-  /*background-color: @color;*/
-/*}*/
+.highlighted, .highlight-stay {
+  .node-title {
+    color: #000 !important;
+  }
+}
 
 .hovered {
   .node-title {
-    color: @back;
-    background-color: @text;
+    color: @text !important;
+    //background-color: @text;
+  }
+}
+.highlight-stay {
+  .node-title {
+    color:@text;
   }
 }
 .expansion-switch {
   .clear;
   border-top: 2px @back solid;
-  background-color: @text;
+  //background-color: @text;
   text-align: center;
   height: @semivu;
   position: relative;
@@ -165,14 +180,14 @@ body {
     margin-left: -@vu * 0.5;
     g {
       polygon {
-        fill: @back;
+        fill: @text;
       }
     }
   }
   &:hover {
-    background-color: @color;
+    background-color: @text;
     polygon {
-      fill: @text;
+      fill: @back;
     }
   }
 }
