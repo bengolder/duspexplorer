@@ -73,6 +73,7 @@ body {
   float: left;
   padding-left: 12px;
   padding-right: 12px;
+  color: #888888;
 }
 .node {
   /*background-color: #ddd;*/
