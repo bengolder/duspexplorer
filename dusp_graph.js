@@ -297,6 +297,14 @@ function stackRandomly(){
     });
 }
 
+function compare(a,b) {
+  if (a.id < b.id)
+     return -1;
+  if (a.id > b.id)
+    return 1;
+  return 0;
+}
+
 function stackOrderly(){
     $('.categories').slideDown(function(){
 
@@ -304,6 +312,7 @@ function stackOrderly(){
             var target = $(elem);
             var string = target.attr("string");
             var friends = $('div[class*="'+string+'"]');
+            friends.sort(compare);
             var thisBox = getCenterAndBox(target);
             var offset = 24;
             var top = thisBox.top + offset;
