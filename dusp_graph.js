@@ -1,4 +1,5 @@
 // helper functions
+
 function getNeighborNodes(node){
     var id = node.id;
     var neighbors = graph[id];
@@ -37,6 +38,32 @@ function getCentersAndBoxes(neighbors){
         geoms.push(info);
     });
     return geoms;
+}
+
+function getBoxesAndColors(objs){
+    var infos = [];
+    objs.each(function(i, elem){
+        var obj = $(elem);
+        var info = getCenterAndBox(obj);
+        log(info);
+        info.color = $.data(elem, 'color');
+        log(info);
+        infos.push(info);
+    });
+    return infos;
+}
+
+function drawAllBoxes(nodes, g){
+    var attributes = getBoxesAndColors(nodes);
+
+    var boxes = g.selectAll("rect")
+        .data(attributes).enter().append("rect");
+
+    boxes.attr('x', function(d){return d.left;})
+        .attr('y', function(d){return d.top;})
+        .attr('width', function(d){return d.w;})
+        .attr('height', function(d){return d.h;})
+        .style('fill', function(d){return d.color;});
 }
 
 function drawLinkGeometry (target, g, neighborclass) {
@@ -298,11 +325,13 @@ function stackRandomly(){
 }
 
 function compare(a,b) {
-  if (a.id < b.id)
-     return -1;
-  if (a.id > b.id)
-    return 1;
-  return 0;
+    if (a.id < b.id){
+        return -1;
+    }
+    if (a.id > b.id){
+        return 1;
+    }
+    return 0;
 }
 
 function stackOrderly(){
@@ -337,6 +366,29 @@ function stackOrderly(){
     });
 }
 
+function drawNetworkDiagram(){
+    // give everything the colored rectangles
+    var boxLayer = svg.append("g").attr("class", "boxLayer");
+    var nodes = $('.node');
+    drawAllBoxes(nodes, boxLayer);
+    // make links that are necessary
+    // turn all the boxes into paths
+    // create circle paths for the boxes to turn into
+    // create arc segment paths for the boxes to turn into
+    // determine the location of the circles
+    // determine locations of other things
+    // hide the text
+    // turn the boxes into circles
+    // draw links
+    // move them to the new location
+    // turn the other boxes into arc segments
+    // move them to the new location
+}
+
+function removeNetworkDiagram(){
+    $('.boxLayer').remove();
+}
+
 $('.node').each(assignNeighborData);
 $('.node-details').hide();
 
@@ -356,17 +408,12 @@ setTimeout(stackRandomly, 1300);
 
 // listeners
 $('body').on('mouseenter','.node', function(e){
-
     var target = $(this);
     makeHovered(target);
-
 }).on('mouseleave', '.node', function(e){
-
     var target = $(this);
     makeUnhovered(target);
-
 }).on('click', '.node-title', function(e){
-
     var target = $(this).parent();
 
     if (target.hasClass('selected')) {
@@ -374,30 +421,25 @@ $('body').on('mouseenter','.node', function(e){
     } else {
         makeSelected(target);
     }
-
 }).on('click', '.align-trigger', function(e){
-
     var target = $(this);
     alignNeighbors(target);
-
 }).on('click', '.expand-trigger', function(e){
-
     // don't let it bubble up to the node
     e.stopPropagation();
     var target = $(this);
     expand(target);
-
 }).on('click', '.collapse-trigger', function(e){
-
     // don't let it bubble up to the node
     e.stopPropagation();
     var target = $(this);
     collapse(target);
-
 }).on('click', '.randomize', function(e){
     stackRandomly();
 }).on('click', '.organize', function(e){
     stackOrderly();
+}).on('click', '.networkize', function(e){
+    drawNetworkDiagram();
 });
 
 $(window).resize(resizeSVG());
