@@ -1,6 +1,30 @@
-// helper functions
+// class for nodes, to track all this per-node information
+Node = function (id){
+    // set id
+    // set elem
+    // set geom
+    // set color
+    // set neighbors
+};
+Node.prototype = {
+    this.id = null,
+    this.elem = null,
+    this.geom = null,
+    this.color: "#AAA",
+    this.neighbors : [],
+    this.boxes: [],
+    this.lines: {
+        "from":[],
+        "to":[],
+    },
+    this.highlight = function(){
+    };
+    this.move = function(){
+    };
+};
 
 function getNeighborNodes(node){
+    // grab neighboring nodes from the graph object
     var id = node.id;
     var neighbors = graph[id];
     var selector = '#' + neighbors.join(',#');
@@ -8,12 +32,14 @@ function getNeighborNodes(node){
 }
 
 function getDocumentSize(){
+    // get the current size of the document
     var w = $(document).width();
     var h = $(document).height();
     return [w, h];
 }
 
 function getCenterAndBox(obj){
+    // find the center, widths, heights, and offsets of an html block
     var x, y;
     var w = obj.width();
     var h = obj.height();
@@ -31,6 +57,7 @@ function getCenterAndBox(obj){
 }
 
 function getCentersAndBoxes(neighbors){
+    // find the geometry information for a list of html blocks
     var geoms = [];
     neighbors.each(function(i, elem){
         obj = $(elem);
@@ -41,6 +68,7 @@ function getCentersAndBoxes(neighbors){
 }
 
 function getBoxesAndColors(objs){
+    // get geometry information and colors for a set of elements
     var infos = [];
     objs.each(function(i, elem){
         var obj = $(elem);
@@ -54,6 +82,7 @@ function getBoxesAndColors(objs){
 }
 
 function drawAllBoxes(nodes, g){
+    // draw svg rectangles for all the html box elements
     var attributes = getBoxesAndColors(nodes);
 
     var boxes = g.selectAll("rect")
@@ -67,6 +96,7 @@ function drawAllBoxes(nodes, g){
 }
 
 function drawLinkGeometry (target, g, neighborclass) {
+    // draw svg lines and boxes for all the neighbors of a node
     var color = $.data(target, 'color')||'#aaa';
     // get all the geometry info
     var thisCenter = getCenterAndBox($(target));
@@ -87,6 +117,7 @@ function drawLinkGeometry (target, g, neighborclass) {
     boxes.attr('height', function(d){return d.h});
     boxes.style('fill', color);
 
+
     // draw the lines
     lines.attr('x1', thisCenter.x)
         .attr('y1', thisCenter.y)
@@ -95,14 +126,19 @@ function drawLinkGeometry (target, g, neighborclass) {
         .attr('stroke-dasharray', '6, 4');
     lines.style('stroke', color);
 
+    neighbors.each(function(i, elem){
+        // record the svg elements for each one
+        // so we can animate them later if everything is shifted
+
+    });
     // why must I dig to get the class name???
     var gclass = g[0][0].className.baseVal;
 
-    // I only need this here because decaring it in css
-    // didn't work
 }
 
 function removeLines (target, g, neighborclass) {
+    // remove the svg lines that were drawn, using d3's 
+    // exit and remove strategies
     var neighbors = $.data(target, 'neighbors');
     neighbors.removeClass(neighborclass);
     g.selectAll("line")
@@ -112,6 +148,7 @@ function removeLines (target, g, neighborclass) {
 }
 
 function addExpansionTrigger(target, color){
+    // add and show a switch for expanding nodes
     var div = $('#switch-template').clone();
     div.attr('id', '');
     div.find('g').attr('transform', 'rotate(180, 12, 5)');
@@ -121,12 +158,13 @@ function addExpansionTrigger(target, color){
 }
 
 function removeExpansionTrigger(target){
+    // remove the node expansion switch
     target.find('.expand-trigger').remove();
 }
 
 
-
 function makeHovered(target){
+    // do whatever needs to be done when a node is hovered
     target.addClass('hovered');
     var color = $.data(target[0], 'color');
     target.css('background-color', color);
@@ -136,6 +174,7 @@ function makeHovered(target){
 }
 
 function makeUnhovered(target){
+    // do whatever needs to be done when a node is unhovered
     removeLines(target[0], hoverLayer, 'highlighted');
     target.removeClass('hovered');
     if (!target.hasClass('selected')){
@@ -144,6 +183,8 @@ function makeUnhovered(target){
 }
 
 function makeSelected(target){
+    // do whatever is needed when something is selected
+    // whatever selection may mean
     target.addClass('selected');
     var color = $.data(target[0], 'color');
     target.css('background-color', color);
@@ -159,6 +200,7 @@ function makeSelected(target){
 }
 
 function deselect(target){
+    // undo whatever selection is
     if (target.hasClass('expanded')){
         collapse(target);
     }
@@ -172,6 +214,7 @@ function deselect(target){
 }
 
 function expand(target) {
+    // this is called when someone clicks on the expand trigger
     // the target is the expand trigger!
     var node = target.parent();
     node.css('z-index', '9');
@@ -191,6 +234,9 @@ function expand(target) {
 }
 
 function collapse(target){
+    // this is called when someone clicks on the expand trigger
+    // and the node is already expanded. This should be called
+    // when clicking on the title 
     // the target is the expand trigger!
     var node = target.parent();
     var trigger = node.find('.expansion-switch');
@@ -213,20 +259,15 @@ function collapse(target){
     });
 }
 
-function alignNeighbors(target){
-
-}
-
-function disperseNeighbors(target){
-
-}
-
 function resizeSVG(){
+    // ensure that the SVG is the right size
     svg.attr("width", getDocumentSize()[0])
     .attr("height", getDocumentSize()[1]);
 }
 
 function fixNodes(){
+    // take all the divs, and ensure that their position is absolute, and not
+    // floating
     var positions = [];
     // get all the positions
     $('.node').each(function(i, elem){
@@ -246,6 +287,7 @@ function fixNodes(){
 }
 
 function assignNeighborData(i, elem){
+    // add a list of neighbors as data to the element
     var neighbors = $(getNeighborNodes(elem));
     $.data(elem, 'neighbors', neighbors);
 }
@@ -255,6 +297,8 @@ function log(thing){
 }
 
 function assignColors(){
+    // create the color scale and assign a color
+    // to each node
     var people0 = d3.hcl("#F87446");
     var people1 = d3.hcl("#2FF383");
     var topic0 = d3.hcl("#4E8FFD");
@@ -290,6 +334,7 @@ function shuffle(o){ //v1.0
 };
 
 function stackRandomly(){
+    // this needs to ensure that the svg follows
     $('.categories').slideUp(function(){
         var nodes = $('.node');
         nodes = shuffle(nodes);
@@ -335,6 +380,8 @@ function compare(a,b) {
 }
 
 function stackOrderly(){
+    // sort and stack the items
+    // this should ensure that motion happens for the svg as well
     $('.categories').slideDown(function(){
 
         $('.category').each(function(i, elem){
