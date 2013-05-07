@@ -42,6 +42,10 @@ function compare(a,b) {
     }
     return 0;
 }
+
+function key(node) {
+    return node.id;
+}
 /* END CONVENIENCE FUNCTIONS ############################# */
 
 
@@ -77,6 +81,7 @@ Node.prototype = {
     // subs for get neighbors
     neighbors : null,
     boxes: null,
+    point: null, // for storing movements
     lines: {
         "from":null,
         "to":null,
@@ -290,30 +295,17 @@ function buildNodes(objs){
 
 /* Functions for drawing and selection operations */
 
-function drawAllBoxes(nodes, g){
-    // draw svg rectangles for all the html box elements
-    var attributes = getBoxesAndColors(nodes);
-    var boxes = g.selectAll("rect")
-        .data(nodes).enter().append("rect");
-
-    boxes.attr('x', function(d){return d.geom.left;})
-        .attr('y', function(d){return d.geom.top;})
-        .attr('width', function(d){return d.geom.w;})
-        .attr('height', function(d){return d.geom.h;})
-        .style('fill', function(d){return d.geom.color;});
-}
-
 function drawLinkGeometry (node, g, neighborClass) {
     // draw svg lines and boxes for all the neighbors of a node
     var lines = g.selectAll("line")
-        .data(node.neighbors).enter().append("line");
+        .data(node.neighbors, key).enter().append("line");
 
     // this one seems expensive
     node.neighborQuery().addClass(neighborClass);
 
     // draw the boxes to highlight everything
     var boxes = g.selectAll("rect")
-        .data(node.neighbors).enter().append("rect");
+        .data(node.neighbors, key).enter().append("rect");
 
     // draw the boxes
     boxes.attr('x', function(d){return d.geom.left});
@@ -359,25 +351,24 @@ function stackRandomly(){
         var maxwidth = $(document).width();
         nodeObjs.each(function(i, elem){
             var node = nodes[elem.id];
-            var vect;
             var newLeft = left + offset + node.geom.w;
             if (newLeft > maxwidth){
                 // it wont fit
                 // go to the next line
                 left = offset + node.geom.w + offset;
                 top = top + eachHeight + offset;
-                vect = {
+                node.point = {
                     'top':top,
                     'left':offset * 2,
                 };
             } else {
-                vect = {
+                node.point = {
                     'top':top,
                     'left':left,
                 };
                 left = left + offset + node.geom.w;
             }
-            node.obj.animate(vect, 1000, 
+            node.obj.animate(node.point, 1000, 
                 function(){
                     node.updateGeom();
                     updateDocumentSize();
@@ -404,24 +395,35 @@ function stackOrderly(){
             var offset = 24;
             var top = target.offset().top + offset;
             var left = target.offset().left - 12;
-            // get all their heights
+
+            // calculate and store the new points in each node
             friends.each(function(i, elem){
                 var node = nodes[elem.id];
-                // calculate their new positions
-                // animate them from their starting position to new position
-                node.obj.animate({
+                node.point = {
                     'top':top,
                     'left':left,
-                }, 1000, 
-                function(){ node.updateGeom();}
-                );
+                };
                 top = top + node.geom.h + offset;
+            // here I could use a d3 transition instead
+            // I might need to calculate the new positions
+            // before I make the transition
+            // I can run a transition on any of the svg layers as well
+            // so I should run multiple transitions
+                // calculate their new positions
+                // animate them from their starting position to new position
+                node.obj.animate(
+                    node.point,
+                    1000, 
+                    function(){ 
+                        node.updateGeom();
+                        updateDocumentSize();
+                        resizeSVG();
+                    }
+                );
             });
 
         });
 
-        updateDocumentSize();
-        resizeSVG();
     });
 }
 
