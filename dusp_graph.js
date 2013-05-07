@@ -1,329 +1,29 @@
-// class for nodes, to track all this per-node information
-Node = function (id){
-    // set id
-    // set elem
-    // set geom
-    // set color
-    // set neighbors
-};
-Node.prototype = {
-    this.id = null,
-    this.elem = null,
-    this.geom = null,
-    this.color: "#AAA",
-    this.neighbors : [],
-    this.boxes: [],
-    this.lines: {
-        "from":[],
-        "to":[],
-    },
-    this.highlight = function(){
-    };
-    this.move = function(){
-    };
-};
+// convenience functions
+// Node class
+// functions to build nodes and setup data
+// functions for drawing and selection operations
+// global variables declaration
+// init function
+// run function (runs initial animation, assigns event listeners)
 
-function getNeighborNodes(node){
-    // grab neighboring nodes from the graph object
-    var id = node.id;
-    var neighbors = graph[id];
-    var selector = '#' + neighbors.join(',#');
-    return selector;
-}
-
-function getDocumentSize(){
-    // get the current size of the document
-    var w = $(document).width();
-    var h = $(document).height();
-    return [w, h];
-}
-
-function getCenterAndBox(obj){
-    // find the center, widths, heights, and offsets of an html block
-    var x, y;
-    var w = obj.width();
-    var h = obj.height();
-    var offset = obj.offset();
-    var left = offset.left;
-    var top = offset.top;
-    var span = obj.find('.node-title span');
-    if (span.length > 0){
-        x = span.offset().left + (span.width() / 2);
-        y = span.offset().top + (span.height() / 2);
-    }
-
-    return {'x':x, 'y':y, 'w':w, 'h':h,
-            'left':left, 'top':top};
-}
-
-function getCentersAndBoxes(neighbors){
-    // find the geometry information for a list of html blocks
-    var geoms = [];
-    neighbors.each(function(i, elem){
-        obj = $(elem);
-        var info = getCenterAndBox(obj);
-        geoms.push(info);
-    });
-    return geoms;
-}
-
-function getBoxesAndColors(objs){
-    // get geometry information and colors for a set of elements
-    var infos = [];
-    objs.each(function(i, elem){
-        var obj = $(elem);
-        var info = getCenterAndBox(obj);
-        log(info);
-        info.color = $.data(elem, 'color');
-        log(info);
-        infos.push(info);
-    });
-    return infos;
-}
-
-function drawAllBoxes(nodes, g){
-    // draw svg rectangles for all the html box elements
-    var attributes = getBoxesAndColors(nodes);
-
-    var boxes = g.selectAll("rect")
-        .data(attributes).enter().append("rect");
-
-    boxes.attr('x', function(d){return d.left;})
-        .attr('y', function(d){return d.top;})
-        .attr('width', function(d){return d.w;})
-        .attr('height', function(d){return d.h;})
-        .style('fill', function(d){return d.color;});
-}
-
-function drawLinkGeometry (target, g, neighborclass) {
-    // draw svg lines and boxes for all the neighbors of a node
-    var color = $.data(target, 'color')||'#aaa';
-    // get all the geometry info
-    var thisCenter = getCenterAndBox($(target));
-    var neighbors = $.data(target, 'neighbors');
-    neighbors.addClass(neighborclass);
-    var geoms = getCentersAndBoxes(neighbors);
-    var lines = g.selectAll("line")
-        .data(geoms).enter().append("line");
-
-    // draw the boxes to highlight everything
-    var boxes = g.selectAll("rect")
-        .data(geoms).enter().append("rect");
-
-    // draw the boxes
-    boxes.attr('x', function(d){return d.left});
-    boxes.attr('y', function(d){return d.top});
-    boxes.attr('width', function(d){return d.w});
-    boxes.attr('height', function(d){return d.h});
-    boxes.style('fill', color);
-
-
-    // draw the lines
-    lines.attr('x1', thisCenter.x)
-        .attr('y1', thisCenter.y)
-        .attr('x2', function(d){ return d.x })
-        .attr('y2', function(d){ return d.y })
-        .attr('stroke-dasharray', '6, 4');
-    lines.style('stroke', color);
-
-    neighbors.each(function(i, elem){
-        // record the svg elements for each one
-        // so we can animate them later if everything is shifted
-
-    });
-    // why must I dig to get the class name???
-    var gclass = g[0][0].className.baseVal;
-
-}
-
-function removeLines (target, g, neighborclass) {
-    // remove the svg lines that were drawn, using d3's 
-    // exit and remove strategies
-    var neighbors = $.data(target, 'neighbors');
-    neighbors.removeClass(neighborclass);
-    g.selectAll("line")
-        .data([]).exit().remove();
-    g.selectAll("rect")
-        .data([]).exit().remove();
-}
-
-function addExpansionTrigger(target, color){
-    // add and show a switch for expanding nodes
-    var div = $('#switch-template').clone();
-    div.attr('id', '');
-    div.find('g').attr('transform', 'rotate(180, 12, 5)');
-    target.append(div);
-    div.addClass('expand-trigger').show();
-    div.css('background-color', color);
-}
-
-function removeExpansionTrigger(target){
-    // remove the node expansion switch
-    target.find('.expand-trigger').remove();
-}
-
-
-function makeHovered(target){
-    // do whatever needs to be done when a node is hovered
-    target.addClass('hovered');
-    var color = $.data(target[0], 'color');
-    target.css('background-color', color);
-    // it gets messy to add the expansion trigger here
-    // addExpansionTrigger(target);
-    drawLinkGeometry(target[0], hoverLayer, 'highlighted');
-}
-
-function makeUnhovered(target){
-    // do whatever needs to be done when a node is unhovered
-    removeLines(target[0], hoverLayer, 'highlighted');
-    target.removeClass('hovered');
-    if (!target.hasClass('selected')){
-        target.css('background-color', '');
-    };
-}
-
-function makeSelected(target){
-    // do whatever is needed when something is selected
-    // whatever selection may mean
-    target.addClass('selected');
-    var color = $.data(target[0], 'color');
-    target.css('background-color', color);
-    // make an svg layer for its links
-    var svgLayer = svg.insert("g", ":first-child").attr("class", 
-        "select " + target[0].id);
-    // draw the geometry
-    drawLinkGeometry(target[0], svgLayer, 'highlight-stay');
-    var expandTrigger = target.find('.expand-trigger');
-    if (expandTrigger.length < 1){
-        addExpansionTrigger(target, color);
-    }
-}
-
-function deselect(target){
-    // undo whatever selection is
-    if (target.hasClass('expanded')){
-        collapse(target);
-    }
-    target.removeClass('selected');
-    target.css('background-color', '');
-    removeExpansionTrigger(target);
-    // remove the svg layer
-    $('.'+target[0].id).remove();
-    var neighbors = getNeighborNodes(target[0]);
-    $(neighbors).removeClass('highlight-stay');
-}
-
-function expand(target) {
-    // this is called when someone clicks on the expand trigger
-    // the target is the expand trigger!
-    var node = target.parent();
-    node.css('z-index', '9');
-    node.animate(
-        {'width': '384px'},
-        100,
-        function(){
-            var details = node.find('.node-details');
-            details.slideDown(100);
-            node.addClass('expanded');
-            target.removeClass('expand-trigger');
-            target.addClass('collapse-trigger');
-            node.find('.node-title').addClass('collapse-trigger');
-            target.find('g').attr('transform', '');
-        });
-
-}
-
-function collapse(target){
-    // this is called when someone clicks on the expand trigger
-    // and the node is already expanded. This should be called
-    // when clicking on the title 
-    // the target is the expand trigger!
-    var node = target.parent();
-    var trigger = node.find('.expansion-switch');
-    node.removeClass('expanded');
-    var originalWidth = $.data(node[0], 'position').w;
-    var details = node.find('.node-details');
-    details.slideUp(100, function(){
-        trigger.find('g').attr('transform', 'rotate(180, 12, 5)');
-        node.animate(
-                {'width': originalWidth + 2},
-                100);
-        node.css('width', 'auto');
-        if (!node.hasClass('selected')) {
-            removeExpansionTrigger(node);
-        }
-        trigger.removeClass('collapse-trigger');
-        node.find('.node-title').removeClass('collapse-trigger');
-        trigger.addClass('expand-trigger');
-        node.css('z-index', 'auto');
-    });
-}
-
-function resizeSVG(){
-    // ensure that the SVG is the right size
-    svg.attr("width", getDocumentSize()[0])
-    .attr("height", getDocumentSize()[1]);
-}
-
-function fixNodes(){
-    // take all the divs, and ensure that their position is absolute, and not
-    // floating
-    var positions = [];
-    // get all the positions
-    $('.node').each(function(i, elem){
-        $.data(elem, 'position', 
-            function (){
-         return getCenterAndBox($(elem));
-            });
-    });
-    // set all the positions
-    $('.node').each(function(i, elem){
-        var p = $.data(elem, 'position')();
-        $(elem).css('top', p.top);
-        $(elem).css('left', p.left);
-    });
-    $('.node').css('position', 'absolute')
-        .css('float', 'none');
-}
-
-function assignNeighborData(i, elem){
-    // add a list of neighbors as data to the element
-    var neighbors = $(getNeighborNodes(elem));
-    $.data(elem, 'neighbors', neighbors);
-}
-
+/* CONVENIENCE FUNCTIONS ############################# */
 function log(thing){
     console.log(thing);
 }
 
-function assignColors(){
-    // create the color scale and assign a color
-    // to each node
-    var people0 = d3.hcl("#F87446");
-    var people1 = d3.hcl("#2FF383");
-    var topic0 = d3.hcl("#4E8FFD");
-    var topic1 = d3.hcl("#B73384");
-    var people = d3.scale.linear()
-        .range([people0, people1])
-        .interpolate(d3.interpolateHcl);
-    var topic = d3.scale.linear()
-        .range([topic0, topic1])
-        .interpolate(d3.interpolateHcl);
-    var peoples = $('.person');
-    var numPeoples = peoples.length;
-    peoples.each(function (i, elem) {
-        var color = people(i/numPeoples);
-        $.data(elem, 'color', color);
-    });
-    var topics = $('div[class*=topic]');
-    var numTopics = topics.length;
-    topics.each(function (i, elem) {
-        var color = topic(i/numTopics);
-        $.data(elem, 'color', color);
-    });
-    $('.project').each(function(i, elem){
-        $.data(elem, 'color', "#aaa");
-    });
+function resizeSVG(){
+    // ensure that the SVG is the right size
+    svg.attr("width", docSize[0])
+    .attr("height", docSize[1]);
+}
+
+
+function updateDocumentSize(){
+    // update the global variable `docSize`
+    // with the current size of the document
+    var w = $(document).width();
+    var h = $(document).height();
+    docSize = [w, h];
 }
 
 //+ Jonas Raoni Soares Silva
@@ -332,42 +32,6 @@ function shuffle(o){ //v1.0
     for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
     return o;
 };
-
-function stackRandomly(){
-    // this needs to ensure that the svg follows
-    $('.categories').slideUp(function(){
-        var nodes = $('.node');
-        nodes = shuffle(nodes);
-        var offset = 24;
-        var eachHeight = 48;
-        var top = offset + eachHeight;
-        var left = offset * 2;
-        var maxwidth = $(document).width();
-        nodes.each(function(i, elem){
-            var obj = $(elem);
-            var vect;
-            var geom = getCenterAndBox(obj);
-            var newLeft = left + offset + geom.w;
-            if (newLeft > maxwidth){
-                // it wont fit
-                // go to the next line
-                left = offset + geom.w + offset;
-                top = top + eachHeight + offset;
-                vect = {
-                    'top':top,
-                    'left':offset * 2,
-                };
-            } else {
-                vect = {
-                    'top':top,
-                    'left':left,
-                };
-                left = left + offset + geom.w;
-            }
-            obj.animate(vect, 1000);
-        });
-    });
-}
 
 function compare(a,b) {
     if (a.id < b.id){
@@ -378,6 +42,350 @@ function compare(a,b) {
     }
     return 0;
 }
+/* END CONVENIENCE FUNCTIONS ############################# */
+
+
+// Node class
+// This is for tracking data on a per-node basis
+// and for coordinating animations
+var Node = function (elem){
+    // set id
+    this.id = elem.id;
+    // set elem
+    this.elem = elem;
+    this.obj = $(this.elem);
+    this.neighbors = [];
+    this.boxes = [];
+    // set the type 
+    var glass = elem.className;
+    if (glass.search("person") !== -1){
+        this.type = "person";
+    } else if (glass.search("topic") !== -1){
+        this.type = "topic";
+    }
+    // set geom
+    this.updateGeom();
+    this.color = "#AAAAAA";
+};
+
+Node.prototype = {
+    id: null,
+    elem: null,
+    obj: null,
+    geom: null,
+    color: null,
+    // subs for get neighbors
+    neighbors : null,
+    boxes: null,
+    lines: {
+        "from":null,
+        "to":null,
+    },
+    type: null,
+    highlight: function(){
+    },
+    move: function(){
+    },
+    //h: function(){ return this.obj.height(); },
+    //w: function(){ return this.obj.width(); },
+    //left: function(){ return this.obj.offset().left;},
+    //top: function(){ return this.obj.offset().top;},
+    //span: function(){return this.obj.find('.node-title span');},
+    //x: function(){ 
+        //var span = this.span();
+        //return span.offset().left + (span.width() / 2);
+    //},
+    //y: function(){ 
+        //var span = this.span();
+        //return span.offset().top + (span.height() / 2);
+    //},
+    updateGeom: function(){
+        // variables
+        var x, y, w, h, offset, left, top, span;
+        // get width and height
+        w = this.obj.width();
+        h = this.obj.height();
+        // find the offset position
+        offset = this.obj.offset();
+        left = offset.left;
+        top = offset.top;
+        //  get and x and y center that is based on the title block
+        span = this.obj.find('.node-title span');
+        if (span.length > 0){
+            x = span.offset().left + (span.width() / 2);
+            y = span.offset().top + (span.height() / 2);
+        }
+        // store the geometric info for later access
+        this.geom = {'x':x, 'y':y, 'w':w, 'h':h,
+                'left':left, 'top':top};
+    },
+    addExpansionTrigger: function(){
+        // first check if there is already a trigger
+        var expandTrigger = this.obj.find('.expand-trigger');
+        if (expandTrigger.length < 1){
+            // add and show a switch for expanding nodes
+            var div = $('#switch-template').clone();
+            div.attr('id', '');
+            div.find('g').attr('transform', 'rotate(180, 12, 5)');
+            this.obj.append(div);
+            div.show()
+                .css('background-color', this.color);
+        }
+    },
+    removeExpansionTrigger: function(){
+        this.obj.find('.expansion-switch').remove();
+    },
+    expand: function(){
+        var obj = this.obj;
+        if (! obj.hasClass('expanded')){
+            obj.css('z-index', '9');
+            // first go wider, then go down
+            // here is where I need to later determine to expand
+            // right or left
+            obj.animate(
+                {'width': '384px'},
+                100,
+                function(){
+                    var details = obj.find('.node-details');
+                    details.slideDown(100);
+                    // update the nodes class, so we know it has been expanded
+                    obj.addClass('expanded');
+                    // update the classes, for collapsing later
+                    // flip the arrow up
+                    obj.find('.expansion-switch')
+                        .find('g').attr('transform', '');
+                });
+        } else {
+            this.collapse();
+        }
+    },
+    collapse: function(){
+        var obj = this.obj;
+        // for use with nested function
+        var self = this;
+        var details = obj.find('.node-details');
+        var trigger = obj.find('.expansion-switch');
+        details.slideUp(100, function(){
+            trigger.find('g').attr('transform', 'rotate(180, 12, 5)');
+            obj.animate(
+                {'width': self.geom.w + 2},
+                100);
+            if (!obj.hasClass('selected')) {
+                self.removeExpansionTrigger();
+            }
+            obj.css('width', 'auto')
+                .removeClass('expanded')
+                .css('z-index', 'auto');
+        });
+    },
+    neighborQuery: function(){
+        // get all the neighbors as a jQuery selection
+        var all = [];
+        for (var i=0; i < this.neighbors.length; i++ ){
+            var neighbor = this.neighbors[i];
+            all.push(neighbor.elem);
+        }
+        return $(all);
+    },
+    hover: function(){
+        this.obj.addClass('hovered')
+            .css('background-color', this.color);
+        drawLinkGeometry(this, hoverLayer, 'highlighted');
+    },
+    unhover: function(){
+        removeLines( this, hoverLayer, 'highlighted');
+        this.obj.removeClass('hovered');
+        if (!this.obj.hasClass('selected')){
+            this.obj.css('background-color', '');
+        }
+    },
+    select: function(){
+        this.obj.addClass('selected')
+            .css('background-color', this.color);
+        var svgLayer = svg.insert("g", ":first-child").attr("class",
+                "select " + this.id);
+        drawLinkGeometry(this, svgLayer, 'highlight-stay');
+        this.addExpansionTrigger();
+    },
+    deselect: function(){
+        if (this.obj.hasClass('expanded')){
+            this.collapse();
+        }
+        this.obj.removeClass('selected')
+            .css('background-color', '');
+        this.removeExpansionTrigger();
+        $('.'+this.id).remove();
+        this.neighborQuery().removeClass('highlight-stay');
+    },
+};
+/* End Node Class */
+
+/* Functions to build nodes and set up data */
+
+function buildColorScales(){
+    colors = {};
+    var people0 = d3.hcl("#F87446");
+    var people1 = d3.hcl("#2FF383");
+    var topic0 = d3.hcl("#4E8FFD");
+    var topic1 = d3.hcl("#B73384");
+    colors['people'] = d3.scale.linear()
+        .range([people0, people1])
+        .interpolate(d3.interpolateHcl);
+    colors['topics'] = d3.scale.linear()
+        .range([topic0, topic1])
+        .interpolate(d3.interpolateHcl);
+}
+
+function buildNodes(objs){
+    nodes = {};
+
+    objs.each(function (i, elem){
+        // make the node
+        var node = new Node( elem );
+        // set the node into the global variable
+        nodes[node.id] = node;
+    });
+
+
+    // colors and neighbors should be assigned after node creation
+
+    // set the colors
+    var peoples = $('.person');
+    var numPeoples = peoples.length;
+    peoples.each(function (i, elem) {
+        // calculate the color
+        var color = colors.people(i/numPeoples);
+        // look up the node, set its color
+        nodes[elem.id].color = color;
+    });
+    var topics = $('div[class*=topic]');
+    var numTopics = topics.length;
+    topics.each(function (i, elem) {
+        var color = colors.topics(i/numTopics);
+        nodes[elem.id].color = color;
+    });
+
+    // set the neighbor data
+    objs.each(function (i, elem){
+        // lookup the list of neighbor ids
+        var neighborIds = graph[elem.id];
+        var node = nodes[elem.id];
+        for (var i=0; i < neighborIds.length; i++){
+            // get the id
+            var neighborId = neighborIds[i];
+            // add the corresponding node to the neighbor list
+            var neighbor = nodes[neighborId];
+            node.neighbors.push(nodes[neighborId]);
+        }
+    });
+
+}
+
+
+/* End Functions to build nodes and set up data */
+
+
+
+
+
+/* Functions for drawing and selection operations */
+
+function drawAllBoxes(nodes, g){
+    // draw svg rectangles for all the html box elements
+    var attributes = getBoxesAndColors(nodes);
+    var boxes = g.selectAll("rect")
+        .data(nodes).enter().append("rect");
+
+    boxes.attr('x', function(d){return d.geom.left;})
+        .attr('y', function(d){return d.geom.top;})
+        .attr('width', function(d){return d.geom.w;})
+        .attr('height', function(d){return d.geom.h;})
+        .style('fill', function(d){return d.geom.color;});
+}
+
+function drawLinkGeometry (node, g, neighborClass) {
+    // draw svg lines and boxes for all the neighbors of a node
+    var lines = g.selectAll("line")
+        .data(node.neighbors).enter().append("line");
+
+    // this one seems expensive
+    node.neighborQuery().addClass(neighborClass);
+
+    // draw the boxes to highlight everything
+    var boxes = g.selectAll("rect")
+        .data(node.neighbors).enter().append("rect");
+
+    // draw the boxes
+    boxes.attr('x', function(d){return d.geom.left});
+    boxes.attr('y', function(d){return d.geom.top});
+    boxes.attr('width', function(d){return d.geom.w});
+    boxes.attr('height', function(d){return d.geom.h});
+    boxes.style('fill', node.color);
+
+    // draw the lines
+    lines.attr('x1', node.geom.x)
+        .attr('y1', node.geom.y)
+        .attr('x2', function(d){ return d.geom.x })
+        .attr('y2', function(d){ return d.geom.y })
+        .attr('stroke-dasharray', '6, 4');
+    lines.style('stroke', node.color);
+
+    // why must I dig to get the class name???
+    // ... because this is svg
+    var gclass = g[0][0].className.baseVal;
+}
+
+function removeLines (node, g, neighborclass) {
+    // remove the svg lines that were drawn, using d3's 
+    // exit and remove strategies
+    node.neighborQuery().removeClass(neighborclass);
+    g.selectAll("line")
+        .data([]).exit().remove();
+    g.selectAll("rect")
+        .data([]).exit().remove();
+}
+
+
+
+function stackRandomly(){
+    // this needs to ensure that the svg follows
+    $('.categories').slideUp(function(){
+        var nodeObjs = $('.node');
+        nodeObjs = shuffle(nodeObjs);
+        var offset = 24;
+        var eachHeight = 48;
+        var top = offset + eachHeight;
+        var left = offset * 2;
+        var maxwidth = $(document).width();
+        nodeObjs.each(function(i, elem){
+            var node = nodes[elem.id];
+            var vect;
+            var newLeft = left + offset + node.geom.w;
+            if (newLeft > maxwidth){
+                // it wont fit
+                // go to the next line
+                left = offset + node.geom.w + offset;
+                top = top + eachHeight + offset;
+                vect = {
+                    'top':top,
+                    'left':offset * 2,
+                };
+            } else {
+                vect = {
+                    'top':top,
+                    'left':left,
+                };
+                left = left + offset + node.geom.w;
+            }
+            node.obj.animate(vect, 1000, 
+                function(){
+                    node.updateGeom();
+                    updateDocumentSize();
+                    resizeSVG();
+                });
+        });
+    });
+}
 
 function stackOrderly(){
     // sort and stack the items
@@ -385,109 +393,108 @@ function stackOrderly(){
     $('.categories').slideDown(function(){
 
         $('.category').each(function(i, elem){
+            // get the category header element
             var target = $(elem);
             var string = target.attr("string");
+            // get everything for that category
             var friends = $('div[class*="'+string+'"]');
+            // sort them based on the compare function
+            // compare function is at the top of page
             friends.sort(compare);
-            var thisBox = getCenterAndBox(target);
             var offset = 24;
-            var top = thisBox.top + offset;
-            var left = thisBox.left - 12;
+            var top = target.offset().top + offset;
+            var left = target.offset().left - 12;
             // get all their heights
             friends.each(function(i, elem){
-                var obj = $(elem);
+                var node = nodes[elem.id];
                 // calculate their new positions
-                var geom = getCenterAndBox(obj);
-                var h = geom['h'];
                 // animate them from their starting position to new position
-                obj.animate({
+                node.obj.animate({
                     'top':top,
                     'left':left,
-                }, 1000);
-                top = top + h + offset;
+                }, 1000, 
+                function(){ node.updateGeom();}
+                );
+                top = top + node.geom.h + offset;
             });
 
         });
 
+        updateDocumentSize();
         resizeSVG();
     });
 }
 
-function drawNetworkDiagram(){
-    // give everything the colored rectangles
-    var boxLayer = svg.append("g").attr("class", "boxLayer");
-    var nodes = $('.node');
-    drawAllBoxes(nodes, boxLayer);
-    // make links that are necessary
-    // turn all the boxes into paths
-    // create circle paths for the boxes to turn into
-    // create arc segment paths for the boxes to turn into
-    // determine the location of the circles
-    // determine locations of other things
-    // hide the text
-    // turn the boxes into circles
-    // draw links
-    // move them to the new location
-    // turn the other boxes into arc segments
-    // move them to the new location
+
+// setup global variables
+var svg,
+    hoverLayer,
+    lines,
+    nodes,
+    docSize,
+    switchTemplate,
+    colors;
+
+// setup all the nodes and data
+function init(){
+    buildColorScales();
+    buildNodes($('.node'));
+    $('.node-details').hide();
+    updateDocumentSize();
+    
+    // set the svg object
+    svg = d3.select("#geom_background").append("svg")
+        .attr("width", docSize[0])
+        .attr("height", docSize[1]);
+
+    // set a layer for displaying hovered info
+    hoverLayer = svg.append("g").attr("class", "hoverLayer");
+
+    // get all the lines on the svg layer
+    lines = svg.selectAll("line");
 }
 
-function removeNetworkDiagram(){
-    $('.boxLayer').remove();
-}
+init();
 
-$('.node').each(assignNeighborData);
-$('.node-details').hide();
 
-assignColors();
-
-var svg = d3.select("#geom_background").append("svg")
-    .attr("width", getDocumentSize()[0])
-    .attr("height", getDocumentSize()[1]);
-
-var hoverLayer = svg.append("g").attr("class", "hoverLayer");
-
-var lines = svg.selectAll("line");
-
-fixNodes();
-stackOrderly();
-setTimeout(stackRandomly, 1300);
-
-// listeners
-$('body').on('mouseenter','.node', function(e){
-    var target = $(this);
-    makeHovered(target);
-}).on('mouseleave', '.node', function(e){
-    var target = $(this);
-    makeUnhovered(target);
-}).on('click', '.node-title', function(e){
-    var target = $(this).parent();
-
-    if (target.hasClass('selected')) {
-        deselect(target);
-    } else {
-        makeSelected(target);
-    }
-}).on('click', '.align-trigger', function(e){
-    var target = $(this);
-    alignNeighbors(target);
-}).on('click', '.expand-trigger', function(e){
-    // don't let it bubble up to the node
-    e.stopPropagation();
-    var target = $(this);
-    expand(target);
-}).on('click', '.collapse-trigger', function(e){
-    // don't let it bubble up to the node
-    e.stopPropagation();
-    var target = $(this);
-    collapse(target);
-}).on('click', '.randomize', function(e){
-    stackRandomly();
-}).on('click', '.organize', function(e){
+function run(){
+    // do initial animations
     stackOrderly();
-}).on('click', '.networkize', function(e){
-    drawNetworkDiagram();
-});
+    setTimeout(stackRandomly, 1300);
+    // set all the listeners
+    // listeners
+    $('body').on('mouseenter','.node', function(e){
+        nodes[this.id].hover();
+    }).on('mouseleave', '.node', function(e){
+        nodes[this.id].unhover();
+    }).on('click', '.node-title', function(e){
+        var target = $(this).parent();
+        var node = nodes[target[0].id]
 
-$(window).resize(resizeSVG());
+        if (target.hasClass('selected')) {
+            node.deselect();
+        } else {
+            node.select();
+        }
+    }).on('click', '.align-trigger', function(e){
+        var target = $(this);
+        alignNeighbors(target);
+    }).on('click', '.expansion-switch', function(e){
+        // don't let it bubble up to the node
+        e.stopPropagation();
+        var target = $(this);
+        var nodeId = target.parent()[0].id;
+        nodes[nodeId].expand();
+    }).on('click', '.expanded', function(e){
+        nodes[this.id].collapse();
+    }).on('click', '.randomize', function(e){
+        stackRandomly();
+    }).on('click', '.organize', function(e){
+        stackOrderly();
+    }).on('click', '.networkize', function(e){
+        drawNetworkDiagram();
+    });
+    $(window).resize(resizeSVG());
+}
 
+run();

@@ -84,6 +84,8 @@ body {
   margin-top: 24px;
   max-width: 384px;
   cursor: pointer;
+  position: absolute;
+  top: 154px;
 }
 .node .node-title {
   max-height: 48px;
