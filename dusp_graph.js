@@ -59,7 +59,7 @@ var Node = function (elem){
     this.elem = elem;
     this.obj = $(this.elem);
     this.neighbors = [];
-    this.boxes = [];
+    this.lineSelections = [];
     // set the type 
     var glass = elem.className;
     if (glass.search("person") !== -1){
@@ -89,27 +89,33 @@ Node.prototype = {
     type: null,
     highlight: function(){
     },
-    move: function(){
+    setNewLocation: function(top, left){
+        // this should set new top, left, x, and y values to move to
+        // it should just store this value
+        this.point = {
+            'top':top,
+            'left':left,
+        };
+        this.vector = {
+            // i need the new x y position, not the vector
+            // first the vector from the current position to the xy
+            // then the vector to the next position
+            'x': this.geom.x - this.geom.left + left + 12,
+            'y': this.geom.y - this.geom.top + top + 24,
+        }
     },
-    //h: function(){ return this.obj.height(); },
-    //w: function(){ return this.obj.width(); },
-    //left: function(){ return this.obj.offset().left;},
-    //top: function(){ return this.obj.offset().top;},
-    //span: function(){return this.obj.find('.node-title span');},
-    //x: function(){ 
-        //var span = this.span();
-        //return span.offset().left + (span.width() / 2);
-    //},
-    //y: function(){ 
-        //var span = this.span();
-        //return span.offset().top + (span.height() / 2);
-    //},
+    move: function(newPoint){
+        
+    },
     updateGeom: function(){
         // variables
         var x, y, w, h, offset, left, top, span;
         // get width and height
         w = this.obj.width();
         h = this.obj.height();
+        if (this.obj.hasClass('expanded')){
+            h = h - this.obj.find('.node-details').height();
+        }
         // find the offset position
         offset = this.obj.offset();
         left = offset.left;
@@ -243,12 +249,13 @@ function buildColorScales(){
 
 function buildNodes(objs){
     nodes = {};
-
+    nodeList = [];
     objs.each(function (i, elem){
         // make the node
         var node = new Node( elem );
-        // set the node into the global variable
+        // set the node into the global variables
         nodes[node.id] = node;
+        nodeList.push(node);
     });
 
 
@@ -300,6 +307,8 @@ function drawLinkGeometry (node, g, neighborClass) {
     var lines = g.selectAll("line")
         .data(node.neighbors, key).enter().append("line");
 
+    node.lineSelections.push(lines);
+
     // this one seems expensive
     node.neighborQuery().addClass(neighborClass);
 
@@ -308,19 +317,19 @@ function drawLinkGeometry (node, g, neighborClass) {
         .data(node.neighbors, key).enter().append("rect");
 
     // draw the boxes
-    boxes.attr('x', function(d){return d.geom.left});
-    boxes.attr('y', function(d){return d.geom.top});
-    boxes.attr('width', function(d){return d.geom.w});
-    boxes.attr('height', function(d){return d.geom.h});
-    boxes.style('fill', node.color);
+    boxes.attr('x', function(d){return d.geom.left})
+        .attr('y', function(d){return d.geom.top})
+        .attr('width', function(d){return d.geom.w})
+        .attr('height', function(d){return d.geom.h})
+        .style('fill', node.color);
 
     // draw the lines
     lines.attr('x1', node.geom.x)
         .attr('y1', node.geom.y)
         .attr('x2', function(d){ return d.geom.x })
         .attr('y2', function(d){ return d.geom.y })
-        .attr('stroke-dasharray', '6, 4');
-    lines.style('stroke', node.color);
+        .attr('stroke-dasharray', '6, 4')
+        .style('stroke', node.color);
 
     // why must I dig to get the class name???
     // ... because this is svg
@@ -331,12 +340,63 @@ function removeLines (node, g, neighborclass) {
     // remove the svg lines that were drawn, using d3's 
     // exit and remove strategies
     node.neighborQuery().removeClass(neighborclass);
+    var gElem = g[0][0];
     g.selectAll("line")
         .data([]).exit().remove();
     g.selectAll("rect")
         .data([]).exit().remove();
+    var splicer = -1;
+    for (var i = 0; i < node.lineSelections.length; i++){
+        if (gElem == node.lineSelections[i][0].parentNode){
+            splicer = i;
+        }
+    }
+    if (splicer > -1){
+        // remove the item from the line selections
+        node.lineSelections.splice(splicer, 1);
+    }
 }
 
+
+// animation functions
+function moveRects(duration, ease){
+        var rects = d3.selectAll('rect');
+        rects.transition()
+            .duration(duration)
+            .attr('x', function(d){return d.point.left + 12 + 'px';})
+            .attr('y', function(d){return d.point.top + 24 + 'px';})
+            .ease(ease)
+            .each('end', function(){
+                updateDocumentSize();
+                resizeSVG();
+            });
+}
+
+function moveNodes(duration, ease){
+    var nodeDivs = d3.selectAll('.node');
+    nodeDivs.transition()
+        .duration(duration)
+        .style('left', function(d, i){ return nodes[this.id].point.left + 'px'; })
+        .style('top', function(d, i){return nodes[this.id].point.top + 'px';})
+        .ease(ease)
+        .each(function (d, i) {
+            var node = nodes[this.id];
+            for (var i = 0; i < node.lineSelections.length; i++){
+                var lines = node.lineSelections[i];
+                lines.transition()
+                    .duration(duration)
+                    .ease(ease)
+                    .attr('x1', function(d){return node.vector.x + 'px';})
+                    .attr('y1', function(d){return node.vector.y + 'px';})
+                    .attr('x2', function(d){return d.vector.x + 'px';})
+                    .attr('y2', function(d){return d.vector.y + 'px';});
+            }
+        }).each('end', function (d, i) {
+            var node = nodes[this.id];
+            node.updateGeom();
+        });
+    moveRects(duration, ease);
+}
 
 
 function stackRandomly(){
@@ -357,32 +417,21 @@ function stackRandomly(){
                 // go to the next line
                 left = offset + node.geom.w + offset;
                 top = top + eachHeight + offset;
-                node.point = {
-                    'top':top,
-                    'left':offset * 2,
-                };
+                node.setNewLocation(top, offset + 2);
             } else {
-                node.point = {
-                    'top':top,
-                    'left':left,
-                };
+                node.setNewLocation(top, left);
                 left = left + offset + node.geom.w;
             }
-            node.obj.animate(node.point, 1000, 
-                function(){
-                    node.updateGeom();
-                    updateDocumentSize();
-                    resizeSVG();
-                });
         });
+        moveNodes(500, 'linear');
     });
 }
 
 function stackOrderly(){
+    // check out the 'g' list
     // sort and stack the items
     // this should ensure that motion happens for the svg as well
     $('.categories').slideDown(function(){
-
         $('.category').each(function(i, elem){
             // get the category header element
             var target = $(elem);
@@ -399,31 +448,11 @@ function stackOrderly(){
             // calculate and store the new points in each node
             friends.each(function(i, elem){
                 var node = nodes[elem.id];
-                node.point = {
-                    'top':top,
-                    'left':left,
-                };
+                node.setNewLocation(top, left);
                 top = top + node.geom.h + offset;
-            // here I could use a d3 transition instead
-            // I might need to calculate the new positions
-            // before I make the transition
-            // I can run a transition on any of the svg layers as well
-            // so I should run multiple transitions
-                // calculate their new positions
-                // animate them from their starting position to new position
-                node.obj.animate(
-                    node.point,
-                    1000, 
-                    function(){ 
-                        node.updateGeom();
-                        updateDocumentSize();
-                        resizeSVG();
-                    }
-                );
             });
-
         });
-
+        moveNodes(500, 'linear');
     });
 }
 
@@ -433,6 +462,7 @@ var svg,
     hoverLayer,
     lines,
     nodes,
+    nodeList,
     docSize,
     switchTemplate,
     colors;
