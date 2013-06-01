@@ -23,6 +23,11 @@ function updateDocumentSize(){
     // with the current size of the document
     var w = $(document).width();
     var h = $(document).height();
+    if (maxHeight !== undefined){
+        if (h > maxHeight){
+            h = maxHeight;
+        }
+    }
     docSize = [w, h];
 }
 
@@ -463,6 +468,7 @@ var svg,
     lines,
     nodes,
     nodeList,
+    maxHeight,
     docSize,
     switchTemplate,
     colors;

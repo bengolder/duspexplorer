@@ -40,15 +40,14 @@ body {
 .select rect {
   opacity: 0.6;
 }
-.controls {
-  height: 61px;
-}
 .header {
   position: relative;
   margin-left: 48px;
 }
 .header .controls {
+  height: 96px;
   padding-left: 12px;
+  border-bottom: 1px solid #222222;
 }
 .header .controls div {
   margin-top: 24px;

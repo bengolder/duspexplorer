@@ -74,14 +74,11 @@ body {
   }
 }
 
-.controls {
-  height: 61px;
-}
-
 .header {
   position: relative;
   margin-left: @pad * 2 + @gut * 2;
   .controls {
+    height: @vu * 4;
     padding-left: @pad;
     div {
       margin-top: @vu;
@@ -95,6 +92,7 @@ body {
         background-color: #ccc;
       }
     }
+    border-bottom: 1px solid @text;
   } 
   .categories {
     margin-top: @vu * 2;
