@@ -1,4 +1,4 @@
-var internationalProjects = [
+var projects = [
   {
     "partners": "University of Eduardo Mondlane\u2019s Center for Habitat Studies and Development (Maputo, Mozambique); AJUK (Youth Association of KaTembe in Maputo, Mozambique)", 
     "description": "To provide training for local planners and community groups based at the site of our research in Maputo, along with future international planners from MIT, to facilitate sustained evidence-\u00ad\u2010based recommendations and political will for reform of policy interventions through locally-\u00ad\u2010led neighborhood and household surveys as well as local monitoring of water and sanitation systems.", 

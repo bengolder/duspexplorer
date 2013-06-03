@@ -158,3 +158,15 @@ body {
 .selected .node-title {
   color: #222222 !important;
 }
+#globe {
+  position: absolute;
+}
+ul.countries {
+  list-style-type: none;
+  z-index: 6;
+  position: absolute;
+  font-weight: bold;
+}
+ul.countries li {
+  cursor: pointer;
+}

@@ -1,7 +1,25 @@
 var stateManager = {};
 var gWidth = 960,
     gHeight = 500;
+    selectedCountry = null;
+var linkedCountries = [];
 var title;
+
+
+
+// load the globe
+// add the projects to the globe
+// increment the color of each country based on the number of projects
+// spin it slowly
+// rgb(78, 143, 253)
+// list projects by region on the left.
+// when a region is clicked or a project is clicked
+// turn the globe to that location and then highlight it
+// I need to be able to:
+//   highlight any number of countries, based on id or all
+//   turn the globe to a particular country
+//      get the center of one or more countries
+//      turn the globe to view that lat long location
 
 function installGlobe(){
     stateManager.globe = true;
@@ -13,7 +31,6 @@ function installGlobe(){
 
     var globe_div = container.append("div").attr("id", "globe");
 
-    title = container.append("h1");
 
     var projection = d3.geo.orthographic()
         .scale(248)
@@ -25,7 +42,21 @@ function installGlobe(){
 
     console.log(canvas);
 
+    canvas.on("mousemove", function() {
+        var p = d3.mouse(this);
+        projection.rotate([circumScale(p[0]), pitchScale(p[1])]);
+        drawGlobe();
+    });
+
     var c = canvas.node().getContext("2d");
+
+    var circumScale = d3.scale.linear()
+        .domain([0, gWidth])
+        .range([-210, 210]);
+
+     var pitchScale = d3.scale.linear()
+         .domain([0, gHeight])
+         .range([60, -60]);
 
     var path = d3.geo.path()
         .projection(projection)
@@ -38,60 +69,176 @@ function installGlobe(){
       borders = topojson.mesh(world, world.objects.countries, function(a, b) { return a.id !== b.id; }),
       i = -1,
       project = null,
-      n = internationalProjects.length;
+      n = projects.length;
 
-    function getCountry(id){
-        var c = null;
-        countries.forEach(function(d, i){
-            if (d.id == id){
-                c = d;
-            }
+    function getCountries(idList){
+        var c = [];
+        countries.forEach(function(country, i){
+
+            idList.forEach(function(id, i){
+                if (country.id == id){
+                    c.push(country);
+                }
+            });
         });
         return c;
     }
 
+    function addToCountrySet(country){
+        var isInList = false;
+        for (var i = 0; i < linkedCountries.length; i++){
+            if (linkedCountries[i].id == country.id){
+                isInList = true;
+            }
+        }
+        if (!isInList){
+            linkedCountries.push(country);
+        }
+    }
 
+    function linkProjectsToCountries(){
+        var max = 0;
+        projects.forEach(function(project, i){
+            countries.forEach(function(country, j){
+                if (country.projects == undefined){
+                    country.projects = [];
+                }
+                project.country_codes.forEach(function (id, k){
+                    if (country.id == id){
+                        country.projects.push(project);
+                        country.fullName = project.countries[k];
+                        addToCountrySet(country);
+                    }
+                    if (country.projects.length > max){
+                        max = country.projects.length;
+                    }
+                });
+            });
+        });
+        console.log('max links =',max);
+    }
 
-    (function transition() {
-    d3.transition()
-        .duration(1250)
-        .each("start", function() {
-            project = internationalProjects[i = (i + 1) % n];
-            title.text(project.title);
-            console.log(project.title);
-        })
-        .tween("rotate", function() {
-            var country = getCountry(project.country_codes[0]);
-            console.log(country);
-            var p = d3.geo.centroid(country),
-                r = d3.interpolate(projection.rotate(), [-p[0], -p[1]]);
-            return function(t) {
-              projection.rotate(r(t));
-              c.clearRect(0, 0, gWidth, gHeight);
-              c.fillStyle = "#bbb", c.beginPath(), path(land), c.fill();
-              c.fillStyle = "#f00", c.beginPath(), path(countries[i]), c.fill();
-              c.strokeStyle = "#fff", c.lineWidth = .5, c.beginPath(), path(borders), c.stroke();
-              c.strokeStyle = "#000", c.lineWidth = 2, c.beginPath(), path(globe), c.stroke();
+    function getCountryPoint(country){
+            return d3.geo.centroid(country);
+
+    }
+
+    projects.forEach(function(project, i){
+        var countries = getCountries(project.countries);
+    });
+
+    function drawFill( color, pathItems){
+        c.fillStyle = color;
+        c.beginPath();
+        path(pathItems);
+        c.fill();
+    }
+
+    function drawStroke( color, strokeWidth, pathItems ){
+        c.strokeStyle = color;
+        c.lineWidth = strokeWidth;
+        c.beginPath();
+        path(pathItems);
+        c.stroke();
+    }
+
+    function ramp(n){
+        var colors = [
+            "#F93937",
+            "#D91754",
+            "#AB1A64",
+            "#762666",
+            ];
+        var shades = [
+            "#57A5F5",
+            "#5B8AD2",
+            "#5971B0",
+            "#51598F",
+            ]
+        return shades[n-1];
+    }
+
+    function drawGlobe(){
+        console.log("redraw");
+        // this is meant to be called initially, and by tweens
+        // clear the canvas context
+        c.clearRect(0, 0, gWidth, gHeight);
+        // fill for all the unselected countries
+        drawFill("#aaa", land);
+        // fill for the selected country
+        // This next line will break
+        countries.forEach(function(country, i){
+            if (country.projects.length > 0){
+                drawFill(ramp(country.projects.length), country);
+            }
+        });
+        drawFill("#FF7E04", selectedCountry);
+        // outlines for the countries
+        drawStroke("fff", 0.5, borders);
+        // outline for the globe itself
+        drawStroke("#000", 2, globe);
+    }
+
+    function tweenToPoint(point){
+        return function(){
+            // This function returns a tweening function for rotating the globe
+            rotator = d3.interpolate(projection.rotate(), 
+                    [-point[0], -point[1]]
+                    );
+            console.log("made rotator", rotator);
+
+            return function( t) {
+                console.log("t",t);
+                projection.rotate(rotator(t));
+                drawGlobe();
             };
-        })
-      .transition()
-        .each("end", transition);
-    })();
+        };
+    }
 
+    function transitionToCountry(country){
+        console.log("rotating to",country.fullName);
+        var p = getCountryPoint(country);
+        console.log(p);
+        d3.transition()
+            .duration(1000)
+            .tween("rotate", tweenToPoint(p));
+    }
 
+    linkProjectsToCountries();
+    drawGlobe();
 
+    var countryLinks = globe_div.insert("ul", "canvas")
+        .attr("class", "countries").selectAll("li")
+        .data(linkedCountries).enter().append("li")
+        .attr("class", "country")
+        .html(function(d){ return d.fullName;});
 
+    countryLinks.on("mousedown", function (c, i){
+        console.log(c.fullName);
+        selectedCountry = c;
+        var p = getCountryPoint(c);
+        console.log(p);
+        var movement = d3.transition()
+            .duration(1000)
+            .tween("rotate", tweenToPoint(p));
+        console.log( "transition:", movement);
+        movement.transition();
+});
 }
+
+
+// thigs I could use offline:
+//  an html and css reference
+//
 
 function removeGlobe(){
     d3.select("#globe").remove();
     d3.select("#node_container").selectAll("div")
-        .style("display", "inherited");
+        .style("display", "default");
     stateManager.globe = false;
 }
 
 d3.select(".locate").on("mousedown", function(d, i){
-    console.log("clicked");
     if (!stateManager.globe){
         console.log("installing");
         installGlobe();
@@ -100,7 +247,6 @@ d3.select(".locate").on("mousedown", function(d, i){
         removeGlobe();
     }
 });
-
 
 
 
