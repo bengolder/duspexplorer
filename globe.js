@@ -40,7 +40,6 @@ function installGlobe(){
         .attr("width", gWidth)
         .attr("height", gHeight);
 
-    console.log(canvas);
 
     canvas.on("mousemove", function() {
         var p = d3.mouse(this);
@@ -159,7 +158,6 @@ function installGlobe(){
     }
 
     function drawGlobe(){
-        console.log("redraw");
         // this is meant to be called initially, and by tweens
         // clear the canvas context
         c.clearRect(0, 0, gWidth, gHeight);
@@ -185,10 +183,8 @@ function installGlobe(){
             rotator = d3.interpolate(projection.rotate(), 
                     [-point[0], -point[1]]
                     );
-            console.log("made rotator", rotator);
 
             return function( t) {
-                console.log("t",t);
                 projection.rotate(rotator(t));
                 drawGlobe();
             };
@@ -196,9 +192,7 @@ function installGlobe(){
     }
 
     function transitionToCountry(country){
-        console.log("rotating to",country.fullName);
         var p = getCountryPoint(country);
-        console.log(p);
         d3.transition()
             .duration(1000)
             .tween("rotate", tweenToPoint(p));
@@ -214,17 +208,39 @@ function installGlobe(){
         .html(function(d){ return d.fullName;});
 
     countryLinks.on("mousedown", function (c, i){
+        d3.select("#globe").select(".projects").remove();
         console.log(c.fullName);
         selectedCountry = c;
         var p = getCountryPoint(c);
-        console.log(p);
         var movement = d3.transition()
             .duration(1000)
             .tween("rotate", tweenToPoint(p));
-        console.log( "transition:", movement);
         movement.transition();
-});
+        console.log(c.projects);
+        var projects = d3.select("#globe").append("ul")
+            .attr("class", "projects")
+            .selectAll("li")
+            .data(c.projects).enter()
+            .append("li").attr("class", "project");
+        projects.append("div").attr("class", "title")
+            .html(function (d, i){
+                console.log(d);
+                return d.title;
+            });
+        projects.append("div").attr("class", "faculty")
+            .html(function (d,i){
+                return d.faculty.join(", ");
+            });
+        projects.append("div").attr("class", "description")
+            .html(function (d,i){
+                return d.description|| "";
+            });
+
+
+    });
 }
+
+
 
 
 // thigs I could use offline:
@@ -240,10 +256,8 @@ function removeGlobe(){
 
 d3.select(".locate").on("mousedown", function(d, i){
     if (!stateManager.globe){
-        console.log("installing");
         installGlobe();
     } else {
-        console.log("uninstalling");
         removeGlobe();
     }
 });

@@ -223,10 +223,29 @@ ul.countries {
   list-style-type: none;
   z-index: 6;
   position: absolute;
+  left: @vu;
   font-weight: bold;
   li {
     cursor: pointer;
+    &:hover {
+      color: #FF7E04;
+    }
   }
 }
+ul.projects {
+  list-style-type: none;
+  z-index: 6;
+  position: absolute;
+  margin-left: 700px;
+  top: 0;
+  li {
+    text-align: right;
+    margin-bottom: @vu;
+    .title { font-weight: bold;}
+    .faculty {font-style: italic;}
+    .description {}
+  }
+}
+
 
 
